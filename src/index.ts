@@ -68,11 +68,16 @@ if (require.main === module) {
   main();
 }
 
-export const fromHTML = (s: HTMLElement, enclosed: boolean = true) => {
-  return (enclosed ? '<speak>' : '') + handleElem(s).replace(/\s\s+/g, ' ') + (enclosed ? '</speak>' : '');
+const fromHTML = (s: string, enclosed: boolean = true) => {
+  return (enclosed ? '<speak>' : '') + handleElem((new JSDOM(s)).window.document.body).replace(/\s\s+/g, ' ') + (enclosed ? '</speak>' : '');
 }
 
-export const fromURL = async(u: URL, enclosed: boolean = true) => {
+const fromURL = async(u: URL, enclosed: boolean = true) => {
   let dom = await JSDOM.fromURL(u.toString());
   return (enclosed ? '<speak>' : '') + handleElem(dom.window.document.body).replace(/\s\s+/g, ' ') + (enclosed ? '</speak>' : '');
+}
+
+module.exports = {
+  fromHTML: fromHTML,
+  fromURL: fromURL
 }
