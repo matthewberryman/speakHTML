@@ -1,13 +1,17 @@
 import {JSDOM} from 'jsdom';
 import * as fs from 'fs';
 
-const handleElem = (s: HTMLElement): string => {
+const handleElem = (s: HTMLElement, filter?: Function): string => {
   if (!s.tagName) {
     if (s.nodeType !== s.COMMENT_NODE) {
       return s.textContent;
     } else {
       return '';
     }
+  }
+
+  if (filter && filter(s)) {
+    return '';
   }
 
   if (['video', 'audio', 'iframe'].includes(s.tagName.toLowerCase())) {
@@ -37,7 +41,7 @@ const handleElem = (s: HTMLElement): string => {
   };
   if (s.tagName.toLowerCase() in headerTags) {
     return headerTags[s.tagName.toLowerCase()] + (s.hasChildNodes ? Array.from(s.childNodes).reduce<string>((acc: string, node: ChildNode) => {
-      return acc + handleElem(node as HTMLElement);
+      return acc + handleElem(node as HTMLElement, filter);
     },'') : '' ) + '</emphasis>';
   }
   let ssmlTagName: string = '';
@@ -49,7 +53,7 @@ const handleElem = (s: HTMLElement): string => {
   }
 
   return ssmlTagName + (s.hasChildNodes ? Array.from(s.childNodes).reduce<string>((acc: string, node: ChildNode) => {
-    return acc + handleElem(node as HTMLElement);
+    return acc + handleElem(node as HTMLElement, filter);
   },'') : '' ) + (ssmlTagName ? ssmlTagName.replace('<','</'): '');
 }
 
@@ -68,13 +72,13 @@ if (require.main === module) {
   main();
 }
 
-const fromHTML = (s: string, enclosed: boolean = true) => {
-  return (enclosed ? '<speak>' : '') + handleElem((new JSDOM(s)).window.document.body).replace(/\s\s+/g, ' ') + (enclosed ? '</speak>' : '');
+const fromHTML = (s: string, enclosed: boolean = true, filter?: Function) => {
+  return (enclosed ? '<speak>' : '') + handleElem((new JSDOM(s)).window.document.body, filter).replace(/\s\s+/g, ' ') + (enclosed ? '</speak>' : '');
 }
 
-const fromURL = async(u: URL, enclosed: boolean = true) => {
+const fromURL = async(u: URL, enclosed: boolean = true, filter?: Function) => {
   let dom = await JSDOM.fromURL(u.toString());
-  return (enclosed ? '<speak>' : '') + handleElem(dom.window.document.body).replace(/\s\s+/g, ' ') + (enclosed ? '</speak>' : '');
+  return (enclosed ? '<speak>' : '') + handleElem(dom.window.document.body, filter).replace(/\s\s+/g, ' ') + (enclosed ? '</speak>' : '');
 }
 
 module.exports = {
